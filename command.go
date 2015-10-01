@@ -8,8 +8,12 @@ import (
 	"time"
 )
 
-var commands map[string]*Command
-var Default = Options{false}
+// Package variables
+var {
+	commands map[string]*Command
+	Default = Options{false}
+
+}
 
 func init() {
 	commands = make(map[string]*Command)
@@ -60,32 +64,38 @@ func (cmd *Command) ParseFlags(opt Options) error {
 	cmdType := reflect.TypeOf(cmd.Reference).Elem()
 	for i := 0; i < cmdType.NumField(); i++ {
 		field := cmdType.Field(i)
-		if field.PkgPath == "" && field.Tag.Get("cmd") != "-" {
+		usage := field.Tag.Get("cmd")
+		// Don't try unexported and untagged fields
+		if field.PkgPath == "" && usage != "-" {
 			cmdValue := reflect.ValueOf(cmd.Reference).Elem()
+			// Addresable interface
 			value := cmdValue.FieldByName(field.Name).Addr().Interface()
+
+			// Namespacing for field collision
 			flagName := ""
 			if opt.Namespace {
 				flagName = strings.ToLower(cmdType.Name() + "." + field.Name)
 			} else {
 				flagName = strings.ToLower(field.Name)
 			}
+			// Only types supported by the flag package
 			switch value := value.(type) {
 			case *bool:
-				flag.BoolVar(value, flagName, *value, field.Tag.Get("cmd"))
+				flag.BoolVar(value, flagName, *value, usage)
 			case *int:
-				flag.IntVar(value, flagName, *value, field.Tag.Get("cmd"))
+				flag.IntVar(value, flagName, *value, usage)
 			case *int64:
-				flag.Int64Var(value, flagName, *value, field.Tag.Get("cmd"))
+				flag.Int64Var(value, flagName, *value, usage)
 			case *uint:
-				flag.UintVar(value, flagName, *value, field.Tag.Get("cmd"))
+				flag.UintVar(value, flagName, *value, usage)
 			case *uint64:
-				flag.Uint64Var(value, flagName, *value, field.Tag.Get("cmd"))
+				flag.Uint64Var(value, flagName, *value, usage)
 			case *float64:
-				flag.Float64Var(value, flagName, *value, field.Tag.Get("cmd"))
+				flag.Float64Var(value, flagName, *value, usage)
 			case *string:
-				flag.StringVar(value, flagName, *value, field.Tag.Get("cmd"))
+				flag.StringVar(value, flagName, *value, usage)
 			case *time.Duration:
-				flag.DurationVar(value, flagName, *value, field.Tag.Get("cmd"))
+				flag.DurationVar(value, flagName, *value, usage)
 			default:
 				return fmt.Errorf("Unsupported type: %s of type %v cannot be parsed as flag.", field.Name, field.Type.Name())
 			}
@@ -111,6 +121,9 @@ func (cmd *Command) Exec(name string) error {
 	return fmt.Errorf("Method <%s> not found.", name)
 }
 
+// Reflects and parses any number of 'struct' values to be called
+// via CLI, throws an error if any of them cannot be parsed or
+// if the called method cannot be executed.
 func Commanderize(opt Options, values ...interface{}) error {
 	commands := make([]*Command, 0)
 	for _, val := range values {
@@ -136,11 +149,13 @@ func Commanderize(opt Options, values ...interface{}) error {
 		return fmt.Errorf("Usage: <struct>:<method> (No command given.)")
 	}
 
+	// Parse the Arg(0) which is the actual command
 	arg := strings.Split(flag.Arg(0), ":")
 	if len(arg) != 2 {
 		return fmt.Errorf("Usage: <struct>:<method> (Got: %s)", flag.Arg(0))
 	}
 
+	// Search for the method and execute it
 	cmdName, cmdMethod := arg[0], arg[1]
 	for _, cmd := range commands {
 		if strings.ToLower(cmd.Name) == strings.ToLower(cmdName) {
