@@ -11,7 +11,7 @@ import (
 // Package variables
 var (
 	commands map[string]*Command
-	Default = Options{false}
+	Default  = Options{false}
 )
 
 func init() {
