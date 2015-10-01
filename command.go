@@ -9,11 +9,10 @@ import (
 )
 
 // Package variables
-var {
+var (
 	commands map[string]*Command
 	Default = Options{false}
-
-}
+)
 
 func init() {
 	commands = make(map[string]*Command)
