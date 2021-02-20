@@ -37,7 +37,7 @@ type Commander struct {
 func checkIfStruct(val interface{}) error {
 	cmdType := reflect.TypeOf(val).Elem()
 	if cmdType.Kind() != reflect.Struct {
-		return fmt.Errorf("Type %v is not a struct.", cmdType.Name())
+		return fmt.Errorf("type %v is not a struct", cmdType.Name())
 	}
 	return nil
 }
@@ -96,7 +96,7 @@ func (cmd *Command) ParseFlags(opt Options) error {
 			case *time.Duration:
 				flag.DurationVar(value, flagName, *value, usage)
 			default:
-				return fmt.Errorf("Unsupported type: %s of type %v cannot be parsed as flag.", field.Name, field.Type.Name())
+				return fmt.Errorf("unsupported type: %s of type %v cannot be parsed as flag", field.Name, field.Type.Name())
 			}
 		}
 	}
@@ -117,7 +117,7 @@ func (cmd *Command) Exec(name string) error {
 			}
 		}
 	}
-	return fmt.Errorf("Method <%s> not found.", name)
+	return fmt.Errorf("method <%s> not found", name)
 }
 
 // Reflects and parses any number of 'struct' values to be called
@@ -145,13 +145,13 @@ func Commanderize(opt Options, values ...interface{}) error {
 
 	if len(flag.Args()) == 0 {
 		flag.PrintDefaults()
-		return fmt.Errorf("Usage: <struct>:<method> (No command given.)")
+		return fmt.Errorf("usage: <struct>:<method> (No command given.)")
 	}
 
 	// Parse the Arg(0) which is the actual command
 	arg := strings.Split(flag.Arg(0), ":")
 	if len(arg) != 2 {
-		return fmt.Errorf("Usage: <struct>:<method> (Got: %s)", flag.Arg(0))
+		return fmt.Errorf("usage: <struct>:<method> (Got: %s)", flag.Arg(0))
 	}
 
 	// Search for the method and execute it
@@ -159,9 +159,8 @@ func Commanderize(opt Options, values ...interface{}) error {
 	for _, cmd := range commands {
 		if strings.ToLower(cmd.Name) == strings.ToLower(cmdName) {
 			return cmd.Exec(cmdMethod)
-		} else {
-			return fmt.Errorf("Command <%s> not found.", cmdName)
 		}
+		return fmt.Errorf("command <%s> not found", cmdName)
 	}
 
 	return nil
